@@ -1,0 +1,8 @@
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Go binaries (each example compiles to its own directory name)
+*/main
