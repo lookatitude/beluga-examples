@@ -1,0 +1,192 @@
+name: CI
+
+# Triggers:
+# - push to main (new examples or fixes)
+# - pull request (validate before merge)
+# - repository_dispatch from beluga-ai releases (smoke-test against new framework version)
+# - manual
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  repository_dispatch:
+    types: [framework-release]
+  workflow_dispatch:
+    inputs:
+      framework_tag:
+        description: "Framework tag to test against (blank = current go.mod version)"
+        required: false
+        default: ""
+
+env:
+  GO_VERSION: "1.26"
+
+jobs:
+  test-examples:
+    name: Build and vet all examples
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      # The examples use a replace directive pointing at ../../framework,
+      # so we need the framework repo checked out as a sibling.
+      # TODO: Remove this step once the framework updates its module path
+      # to github.com/lookatitude/beluga-ai/v2.
+      - name: Checkout framework (for replace directive)
+        uses: actions/checkout@v6
+        with:
+          repository: lookatitude/beluga-ai
+          path: ../framework
+          # Use the dispatched tag if available, otherwise latest main
+          ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || github.event_name == 'workflow_dispatch' && inputs.framework_tag || 'main' }}
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build and vet all examples
+        run: |
+          PASS=0
+          FAIL=0
+          FAILURES=""
+
+          for dir in */; do
+            if [ ! -f "${dir}go.mod" ]; then
+              continue
+            fi
+
+            EXAMPLE="${dir%/}"
+            echo "::group::${EXAMPLE}"
+
+            cd "${dir}"
+
+            if go build -o /dev/null . 2>&1; then
+              echo "build: OK"
+            else
+              echo "::error::${EXAMPLE}: build failed"
+              FAIL=$((FAIL + 1))
+              FAILURES="${FAILURES}\n  - ${EXAMPLE}: build failed"
+              cd ..
+              echo "::endgroup::"
+              continue
+            fi
+
+            if go vet . 2>&1; then
+              echo "vet: OK"
+            else
+              echo "::error::${EXAMPLE}: vet failed"
+              FAIL=$((FAIL + 1))
+              FAILURES="${FAILURES}\n  - ${EXAMPLE}: vet failed"
+              cd ..
+              echo "::endgroup::"
+              continue
+            fi
+
+            if go mod tidy && git diff --exit-code go.mod go.sum; then
+              echo "tidy: OK"
+            else
+              echo "::warning::${EXAMPLE}: go.mod/go.sum not tidy"
+            fi
+
+            PASS=$((PASS + 1))
+            echo "${EXAMPLE}: PASS"
+            cd ..
+            echo "::endgroup::"
+          done
+
+          TOTAL=$((PASS + FAIL))
+          echo ""
+          echo "Results: ${PASS}/${TOTAL} examples passing"
+
+          if [ "${FAIL}" -gt 0 ]; then
+            echo ""
+            echo "Failures:"
+            printf "${FAILURES}\n"
+            exit 1
+          fi
+
+  # On framework release dispatch, also bump go.mod versions and report
+  # any breakage. This runs AFTER test-examples to first verify current
+  # state, then test the new version.
+  bump-on-release:
+    name: Bump framework version (release dispatch only)
+    needs: [test-examples]
+    if: github.event_name == 'repository_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Checkout framework at release tag
+        uses: actions/checkout@v6
+        with:
+          repository: lookatitude/beluga-ai
+          path: ../framework
+          ref: ${{ github.event.client_payload.tag }}
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Bump and test
+        id: bump
+        run: |
+          TAG="${{ github.event.client_payload.tag }}"
+          PASS=0
+          FAIL=0
+          REPORT=""
+
+          for dir in */; do
+            if [ ! -f "${dir}go.mod" ]; then
+              continue
+            fi
+
+            EXAMPLE="${dir%/}"
+            cd "${dir}"
+
+            # Tidy to pick up the new framework (replace directive
+            # points at ../framework which is now at the release tag)
+            go mod tidy 2>&1 || true
+
+            if go build -o /dev/null . 2>&1; then
+              PASS=$((PASS + 1))
+              REPORT="${REPORT}\n- ${EXAMPLE}: OK"
+            else
+              FAIL=$((FAIL + 1))
+              REPORT="${REPORT}\n- ${EXAMPLE}: BROKEN (build failed)"
+            fi
+
+            cd ..
+          done
+
+          TOTAL=$((PASS + FAIL))
+          echo "report<<REPORT_EOF" >> "$GITHUB_OUTPUT"
+          printf "Results: ${PASS}/${TOTAL} examples passing against ${TAG}\n${REPORT}\n" >> "$GITHUB_OUTPUT"
+          echo "REPORT_EOF" >> "$GITHUB_OUTPUT"
+          echo "has_changes=$(git diff --quiet && echo false || echo true)" >> "$GITHUB_OUTPUT"
+          echo "failures=${FAIL}" >> "$GITHUB_OUTPUT"
+
+      - name: Create bump PR
+        if: steps.bump.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/bump-framework-${{ github.event.client_payload.tag }}
+          base: main
+          delete-branch: true
+          title: "chore(deps): bump beluga-ai to ${{ github.event.client_payload.tag }}"
+          commit-message: "chore(deps): bump beluga-ai to ${{ github.event.client_payload.tag }}"
+          body: |
+            Automated bump triggered by framework release ${{ github.event.client_payload.tag }}.
+
+            ${{ steps.bump.outputs.report }}
+
+            🤖 Generated by CI
+          add-paths: |
+            */go.mod
+            */go.sum
