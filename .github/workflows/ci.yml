@@ -31,17 +31,19 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # The examples use a replace directive pointing at ../../framework,
-      # so we need the framework repo checked out as a sibling.
-      # TODO: Remove this step once the framework updates its module path
-      # to github.com/lookatitude/beluga-ai/v2.
-      - name: Checkout framework (for replace directive)
-        uses: actions/checkout@v6
-        with:
-          repository: lookatitude/beluga-ai
-          path: ../framework
-          # Use the dispatched tag if available, otherwise latest main
-          ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || github.event_name == 'workflow_dispatch' && inputs.framework_tag || 'main' }}
+      # The examples' go.mod has `replace github.com/lookatitude/beluga-ai => ../../framework`,
+      # matching the local workspace dev layout. actions/checkout@v6 forbids `path:` values
+      # outside $GITHUB_WORKSPACE for security, so we clone the framework manually to the
+      # sibling directory the replace directive expects.
+      # TODO: Remove this step once the framework updates its module path to
+      # github.com/lookatitude/beluga-ai/v2 and examples can drop the replace directive.
+      - name: Clone framework to sibling path (replace-directive target)
+        env:
+          FRAMEWORK_REF: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || github.event_name == 'workflow_dispatch' && inputs.framework_tag || 'main' }}
+        run: |
+          git clone --depth 1 --branch "${FRAMEWORK_REF}" \
+            https://github.com/lookatitude/beluga-ai.git \
+            "${GITHUB_WORKSPACE}/../framework"
 
       - uses: actions/setup-go@v6
         with:
@@ -122,12 +124,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Checkout framework at release tag
-        uses: actions/checkout@v6
-        with:
-          repository: lookatitude/beluga-ai
-          path: ../framework
-          ref: ${{ github.event.client_payload.tag }}
+      - name: Clone framework at release tag (replace-directive target)
+        env:
+          FRAMEWORK_REF: ${{ github.event.client_payload.tag }}
+        run: |
+          git clone --depth 1 --branch "${FRAMEWORK_REF}" \
+            https://github.com/lookatitude/beluga-ai.git \
+            "${GITHUB_WORKSPACE}/../framework"
 
       - uses: actions/setup-go@v6
         with:
