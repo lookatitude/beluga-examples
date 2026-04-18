@@ -4,5 +4,7 @@
 .idea/
 .vscode/
 
-# Go binaries (each example compiles to its own directory name)
-*/main
+# Go build artifacts
+*.exe
+*.test
+*.out
