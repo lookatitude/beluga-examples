@@ -82,3 +82,13 @@ for d in */; do [ -f "$d/go.mod" ] && (cd "$d" && go get github.com/lookatitude/
 ## Wiki
 
 `.wiki/` holds examples-specific knowledge: per-example conventions, known framework version compatibility, testing patterns. See `.wiki/index.md` for routing.
+
+## Security review
+
+Every new or modified example triggers `example-security-reviewer` (`.claude/agents/example-security-reviewer.md`) via the `/new-example` command. The reviewer runs gosec + govulncheck + manual checks for hardcoded secrets, unsafe patterns, and missing validation.
+
+Blocking findings (any gosec high-severity, any govulncheck CVE, hardcoded secrets, unbounded external reads, user input → exec/SQL/file without validation) must be fixed before merge.
+
+Non-blocking advisory findings (style, docs, low-severity) are surfaced in the review but don't block.
+
+Manual invocation: `@agent-example-security-reviewer` on any example diff.
