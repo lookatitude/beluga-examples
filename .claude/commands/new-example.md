@@ -72,7 +72,7 @@ git checkout -b <branch-name>
 `@agent-example-author` receives: sub-issue + parent + brief + framework PR summary/diff. Creates:
 
 - `<example-name>/` directory
-- `<example-name>/go.mod` importing `github.com/lookatitude/beluga-ai` pinned to the framework PR's release tag (or `@<commit-sha>` if no release tag yet)
+- `<example-name>/go.mod` importing `github.com/lookatitude/beluga-ai/v2` pinned to the framework PR's release tag (or `@<commit-sha>` if no release tag yet)
 - `<example-name>/main.go` — minimal, focused demonstration; one feature per example; full imports; explicit error handling; `os.Getenv` for secrets
 - `<example-name>/README.md` — what it demonstrates, prerequisites, how to run, expected output
 
@@ -124,4 +124,4 @@ Linear auto-closes the sub-issue on merge. If the example references a tutorial 
 
 ## Framework version pinning
 
-When `go.mod` is generated, pin the framework version to the exact tag shipped by the merged framework PR (`github.com/lookatitude/beluga-ai vX.Y.Z`). If the PR is merged but no release tag exists yet, use `@<commit-sha>` until a release ships. Never use `@latest` — pin explicitly for reproducibility.
+When `go.mod` is generated, pin the framework version to the exact tag shipped by the merged framework PR (`github.com/lookatitude/beluga-ai/v2 vX.Y.Z`). If the PR is merged but no release tag exists yet, use `@<commit-sha>` until a release ships. Never use `@latest` — pin explicitly for reproducibility.

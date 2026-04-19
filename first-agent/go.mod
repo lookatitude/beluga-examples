@@ -2,13 +2,7 @@ module github.com/lookatitude/beluga-examples/first-agent
 
 go 1.26.2
 
-// TODO: Remove this replace directive once the framework updates its
-// module path to github.com/lookatitude/beluga-ai/v2 (required by Go
-// modules for major version 2+). Until then, examples must use a local
-// replace to reference the framework's v2 packages.
-replace github.com/lookatitude/beluga-ai => ../../framework
-
-require github.com/lookatitude/beluga-ai v0.0.0
+require github.com/lookatitude/beluga-ai/v2 v2.10.1
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

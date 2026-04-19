@@ -28,7 +28,7 @@ Keep every example compiling and running against the latest framework release. W
 For each example directory with a `go.mod`:
 ```bash
 cd <example>
-go get github.com/lookatitude/beluga-ai@<tag>
+go get github.com/lookatitude/beluga-ai/v2@<tag>
 go mod tidy
 ```
 

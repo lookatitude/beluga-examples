@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Standalone runnable code examples for the Beluga AI framework (`github.com/lookatitude/beluga-ai`). Each example is a self-contained Go program that demonstrates a specific feature or pattern and can be built and run independently. Examples are linked from the website's tutorials and guides.
+Standalone runnable code examples for the Beluga AI framework (`github.com/lookatitude/beluga-ai/v2`). Each example is a self-contained Go program that demonstrates a specific feature or pattern and can be built and run independently. Examples are linked from the website's tutorials and guides.
 
 ## Project scope
 
@@ -37,7 +37,7 @@ examples/
 ```
 
 Each example directory MUST:
-- Have its own `go.mod` importing `github.com/lookatitude/beluga-ai`
+- Have its own `go.mod` importing `github.com/lookatitude/beluga-ai/v2`
 - Compile with `go build .`
 - Run with `go run .` (may require API keys via env vars — document in a comment at the top of `main.go`)
 - Be self-contained — no shared libraries or helper packages across examples
@@ -56,7 +56,7 @@ cd first-agent && go run .
 for d in */; do [ -f "$d/go.mod" ] && (cd "$d" && go build . && echo "OK: $d" || echo "FAIL: $d"); done
 
 # Bump all examples to a new framework version
-for d in */; do [ -f "$d/go.mod" ] && (cd "$d" && go get github.com/lookatitude/beluga-ai@v2.8.5 && go mod tidy); done
+for d in */; do [ -f "$d/go.mod" ] && (cd "$d" && go get github.com/lookatitude/beluga-ai/v2@v2.10.1 && go mod tidy); done
 ```
 
 ## Naming conventions
@@ -69,7 +69,7 @@ for d in */; do [ -f "$d/go.mod" ] && (cd "$d" && go get github.com/lookatitude/
 
 - Follow the framework's Go conventions: `context.Context` first parameter, explicit error handling, `slog` for logging.
 - Use the registry pattern (`llm.New("anthropic", cfg)`) not direct construction.
-- Import providers for side-effect registration: `import _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"`.
+- Import providers for side-effect registration: `import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"`.
 - Keep examples minimal — demonstrate one feature, not all features.
 - Add a file-top comment block documenting what the example demonstrates and what env vars are needed.
 

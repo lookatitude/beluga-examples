@@ -17,7 +17,7 @@ gh release view --repo lookatitude/beluga-ai --json tagName --jq .tagName
 
 ### Step 2 — Bump and test
 `@agent-example-maintainer` runs:
-1. Bumps all examples to the resolved tag (`go get github.com/lookatitude/beluga-ai@<tag>`)
+1. Bumps all examples to the resolved tag (`go get github.com/lookatitude/beluga-ai/v2@<tag>`)
 2. Runs `go build .` and `go vet .` on each
 3. Fixes breakage where possible (minimal fixes — API renames, new required parameters)
 4. Reports results: OK / FIXED / BROKEN per example
