@@ -31,7 +31,7 @@ Create new runnable code examples that demonstrate framework features. Each exam
 mkdir <example-name>
 cd <example-name>
 go mod init github.com/lookatitude/beluga-examples/<example-name>
-go get github.com/lookatitude/beluga-ai@latest
+go get github.com/lookatitude/beluga-ai/v2@latest
 ```
 
 ### main.go structure
@@ -60,10 +60,10 @@ func main() {
 ### Rules
 
 - One feature per example. If a feature needs two examples (basic + advanced), make two directories.
-- Full imports — `github.com/lookatitude/beluga-ai/...`, never abbreviated.
+- Full imports — `github.com/lookatitude/beluga-ai/v2/...`, never abbreviated.
 - Handle every error explicitly. No `_` for error returns.
 - Use the registry pattern (`llm.New("anthropic", cfg)`) not direct construction.
-- Import providers for side-effect registration: `import _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"`.
+- Import providers for side-effect registration: `import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"`.
 - API keys via `os.Getenv()` — never hardcoded.
 - Keep it minimal — the shortest program that demonstrates the feature correctly.
 - The file-top comment block is mandatory (what it demonstrates, prerequisites, how to run).

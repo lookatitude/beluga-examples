@@ -21,16 +21,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/agent"
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/llm"
-	"github.com/lookatitude/beluga-ai/tool"
+	"github.com/lookatitude/beluga-ai/v2/agent"
+	"github.com/lookatitude/beluga-ai/v2/config"
+	"github.com/lookatitude/beluga-ai/v2/core"
+	"github.com/lookatitude/beluga-ai/v2/llm"
+	"github.com/lookatitude/beluga-ai/v2/tool"
 
 	// Register the OpenAI provider via init(). Swap this import for any
 	// other provider (anthropic, ollama, google, bedrock, etc.) and change
 	// the llm.New call below to match.
-	_ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/v2/llm/providers/openai"
 )
 
 // CalculatorInput is the typed input schema for the calculator tool.

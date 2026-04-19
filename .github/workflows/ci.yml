@@ -31,23 +31,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # The examples' go.mod has `replace github.com/lookatitude/beluga-ai => ../../framework`,
-      # matching the local workspace dev layout. actions/checkout@v6 forbids `path:` values
-      # outside $GITHUB_WORKSPACE for security, so we clone the framework manually to the
-      # sibling directory the replace directive expects.
-      # TODO: Remove this step once the framework updates its module path to
-      # github.com/lookatitude/beluga-ai/v2 and examples can drop the replace directive.
-      - name: Clone framework to sibling path (replace-directive target)
-        env:
-          FRAMEWORK_REF: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || github.event_name == 'workflow_dispatch' && inputs.framework_tag || 'main' }}
-        run: |
-          git clone --depth 1 --branch "${FRAMEWORK_REF}" \
-            https://github.com/lookatitude/beluga-ai.git \
-            "${GITHUB_WORKSPACE}/../framework"
-
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
+
+      # On workflow_dispatch with an explicit framework_tag, bump every example's
+      # go.mod to that tag before building. repository_dispatch uses the same path
+      # via the bump-on-release job below.
+      - name: Bump framework to requested tag (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch' && inputs.framework_tag != ''
+        env:
+          FRAMEWORK_TAG: ${{ inputs.framework_tag }}
+        run: |
+          for dir in */; do
+            [ -f "${dir}go.mod" ] || continue
+            (cd "${dir}" && go get "github.com/lookatitude/beluga-ai/v2@${FRAMEWORK_TAG}" && go mod tidy)
+          done
 
       - name: Build and vet all examples
         run: |
@@ -124,14 +123,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Clone framework at release tag (replace-directive target)
-        env:
-          FRAMEWORK_REF: ${{ github.event.client_payload.tag }}
-        run: |
-          git clone --depth 1 --branch "${FRAMEWORK_REF}" \
-            https://github.com/lookatitude/beluga-ai.git \
-            "${GITHUB_WORKSPACE}/../framework"
-
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
@@ -152,8 +143,8 @@ jobs:
             EXAMPLE="${dir%/}"
             cd "${dir}"
 
-            # Tidy to pick up the new framework (replace directive
-            # points at ../framework which is now at the release tag)
+            # Bump to the released framework tag and tidy the graph.
+            go get "github.com/lookatitude/beluga-ai/v2@${TAG}" 2>&1 || true
             go mod tidy 2>&1 || true
 
             if go build -o /dev/null . 2>&1; then

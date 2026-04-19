@@ -11,10 +11,10 @@ alwaysApply: true
 - Have its own `go.mod` — no workspace-level go.mod, no shared modules.
 - Compile with `go build .` from its own directory.
 - Have a file-top comment block documenting: what it demonstrates, prerequisites (Go version, env vars), and how to run it.
-- Use full imports (`github.com/lookatitude/beluga-ai/...`).
+- Use full imports (`github.com/lookatitude/beluga-ai/v2/...`).
 - Handle every error explicitly — no `_` for error returns.
 - Use the registry pattern (`llm.New("anthropic", cfg)`) not direct construction.
-- Import providers via side-effect: `import _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"`.
+- Import providers via side-effect: `import _ "github.com/lookatitude/beluga-ai/v2/llm/providers/anthropic"`.
 - Use `os.Getenv()` for API keys — never hardcoded secrets.
 
 ## Every example MUST NOT
