@@ -1,0 +1,65 @@
+{
+  "name": "eval-demo-smoke",
+  "samples": [
+    {
+      "Input": "Please echo: hello world",
+      "ExpectedOutput": "hello world",
+      "Turns": [
+        {
+          "Role": "assistant",
+          "ToolCalls": [
+            {"ID": "call_1", "Name": "echo", "Arguments": "{\"message\":\"hello world\"}"}
+          ]
+        },
+        {"Role": "tool", "Content": "hello world"},
+        {"Role": "assistant", "Content": "hello world"}
+      ],
+      "ExpectedTools": ["echo"]
+    },
+    {
+      "Input": "Please echo: beluga",
+      "ExpectedOutput": "beluga",
+      "Turns": [
+        {
+          "Role": "assistant",
+          "ToolCalls": [
+            {"ID": "call_1", "Name": "echo", "Arguments": "{\"message\":\"beluga\"}"}
+          ]
+        },
+        {"Role": "tool", "Content": "beluga"},
+        {"Role": "assistant", "Content": "beluga"}
+      ],
+      "ExpectedTools": ["echo"]
+    },
+    {
+      "Input": "Please echo: 42",
+      "ExpectedOutput": "42",
+      "Turns": [
+        {
+          "Role": "assistant",
+          "ToolCalls": [
+            {"ID": "call_1", "Name": "echo", "Arguments": "{\"message\":\"42\"}"}
+          ]
+        },
+        {"Role": "tool", "Content": "42"},
+        {"Role": "assistant", "Content": "42"}
+      ],
+      "ExpectedTools": ["echo"]
+    },
+    {
+      "Input": "Please echo: quick brown fox",
+      "ExpectedOutput": "quick brown fox",
+      "Turns": [
+        {
+          "Role": "assistant",
+          "ToolCalls": [
+            {"ID": "call_1", "Name": "echo", "Arguments": "{\"message\":\"quick brown fox\"}"}
+          ]
+        },
+        {"Role": "tool", "Content": "quick brown fox"},
+        {"Role": "assistant", "Content": "quick brown fox"}
+      ],
+      "ExpectedTools": ["echo"]
+    }
+  ]
+}
