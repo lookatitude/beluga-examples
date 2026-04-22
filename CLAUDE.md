@@ -79,6 +79,10 @@ for d in */; do [ -f "$d/go.mod" ] && (cd "$d" && go get github.com/lookatitude/
 - `beluga-website` — tutorials and guides link to examples here. When renaming example directories, update the website links too.
 - `beluga.git` (workspace) — shared knowledge, roadmap, coordination.
 
+## Claude 4.x and example agents
+
+Agents under `.claude/agents/` include a **Prompting baseline (Claude 4.x)**. For this repo, that means **literal** scope per example (one feature per example), **explicit** file-top doc comments and env var documentation, and **no assumed** handoff to the website team—link and label what the example proves. When an example’s `main.go` uses the user’s real API keys, keep comments focused on **defensive, local use**; avoid celebratory offensive-security phrasing in sample text.
+
 ## Wiki
 
 `.wiki/` holds examples-specific knowledge: per-example conventions, known framework version compatibility, testing patterns. See `.wiki/index.md` for routing.
