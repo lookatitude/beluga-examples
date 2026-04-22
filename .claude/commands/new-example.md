@@ -7,6 +7,11 @@ Scaffold example: $ARGUMENTS
 
 $ARGUMENTS should be a Linear sub-issue ID (e.g., `LOO-48`) labeled `layer:examples`. For examples not tracked in Linear, pass a brief path instead: `/new-example ../research/briefs/<slug>.md`.
 
+## Claude 4.x invocation notes
+
+- **Scope:** One competency per example directory—enumerate required env vars and failure modes explicitly in the header comment.
+- **Copy:** Comments and README excerpts should stay defensive/teaching; avoid sensational security wording.
+
 ## Pre-flight (Linear-integrated, A1)
 
 ### 1. Fetch Linear context
