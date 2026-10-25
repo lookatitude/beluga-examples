@@ -145,7 +145,7 @@ run as a canary to read, not a hard gate.
 ## Regenerate locally
 
 ```bash
-go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@v2.13.6
+go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@v2.13.12
 beluga init eval-demo \
   --module github.com/lookatitude/beluga-examples/eval-demo
 cd eval-demo && go mod tidy

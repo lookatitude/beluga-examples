@@ -2,11 +2,12 @@ module github.com/lookatitude/beluga-examples/scaffolded-basic
 
 go 1.26.0
 
-require github.com/lookatitude/beluga-ai/v2 v2.13.6
+require github.com/lookatitude/beluga-ai/v2 v2.13.12
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/coder/websocket v1.8.15 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect

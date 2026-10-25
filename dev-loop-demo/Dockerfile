@@ -15,7 +15,7 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/dev-loop-demo .
 FROM gcr.io/distroless/static-debian12:nonroot
 
 LABEL org.opencontainers.image.source="https://example.com/dev-loop-demo"
-LABEL org.opencontainers.image.version="v2.13.6"
+LABEL org.opencontainers.image.version="v2.13.12"
 LABEL org.opencontainers.image.title="dev-loop-demo"
 
 USER nonroot:nonroot
