@@ -36,5 +36,5 @@ alwaysApply: true
 cd <example-dir>
 go build .
 go vet .
-go mod tidy && git diff --exit-code go.mod go.sum
+go mod tidy -diff     # non-zero exit + diff if go.mod/go.sum are not tidy (root CI enforces this)
 ```

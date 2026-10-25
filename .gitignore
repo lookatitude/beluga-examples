@@ -8,3 +8,8 @@
 *.exe
 *.test
 *.out
+
+# Local secrets — never commit. Keep the committed templates.
+.env
+.env.*
+!.env.example

@@ -7,7 +7,7 @@ Scaffold example: $ARGUMENTS
 
 $ARGUMENTS should be a Linear sub-issue ID (e.g., `LOO-48`) labeled `layer:examples`. For examples not tracked in Linear, pass a brief path instead: `/new-example ../research/briefs/<slug>.md`.
 
-## Claude 4.x invocation notes
+## Invocation notes
 
 - **Scope:** One competency per example directory—enumerate required env vars and failure modes explicitly in the header comment.
 - **Copy:** Comments and README excerpts should stay defensive/teaching; avoid sensational security wording.
@@ -96,12 +96,16 @@ Per `.claude/rules/examples.md`:
 
 - `go build .` succeeds
 - `go vet .` clean
-- `go mod tidy` produces no diff
+- `go mod tidy -diff` reports no diff
 - If the example doesn't require API keys, `go run .` produces the documented expected output
 
-### 4. Invoke pr-review-toolkit:code-reviewer (pre-merge gate, A1)
+### 4. General code review (pre-merge gate, A1)
 
-`@agent-pr-review-toolkit:code-reviewer` reviews the scaffolded example for: idiomatic Go, consistent style with other examples, complete imports, proper error handling, no hardcoded secrets, README accuracy. Address any high-confidence findings before proceeding.
+Review the example for: idiomatic Go, consistent style with other examples, complete imports, proper error handling, no hardcoded secrets, README accuracy. Address any high-confidence findings before proceeding. Use the first reviewer that is available, and say in the PR body which one ran:
+
+1. **Codex adversarial review** — `/codex:adversarial-review` on the branch (needs the `codex@openai-codex` plugin and a logged-in `codex` CLI; see the workspace `CLAUDE.md` § Adversarial review). This is the default reviewer.
+2. **`@agent-pr-review-toolkit:code-reviewer`** — only if the `pr-review-toolkit` plugin is installed (`claude plugin list`). It is not installed by default.
+3. **Neither available** — do a self-review against the checklist above and record "general review: self-review only (no Codex / pr-review-toolkit)" in the PR body. Do not describe it as an independent review.
 
 ### 5. Invoke example-security-reviewer (pre-merge gate, A2)
 

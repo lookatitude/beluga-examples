@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Standalone runnable code examples for the Beluga AI framework (`github.com/lookatitude/beluga-ai/v2`). Each example is a self-contained Go program that demonstrates a specific feature or pattern and can be built and run independently. Examples are linked from the website's tutorials and guides.
+Standalone runnable code examples for the Beluga AI framework (`github.com/lookatitude/beluga-ai/v2`). Each example is a self-contained Go program that demonstrates a specific feature or pattern and can be built and run independently. Examples are meant to be linked from the framework guides and the website's tutorials; as of 2026-10-25 no guide or website page links to a specific example yet (only release posts link to the repo), so add the link on the docs side when you ship or rename one.
 
 ## Project scope
 
@@ -25,16 +25,22 @@ examples/
 │   ├── agents/
 │   ├── commands/
 │   └── rules/
-├── first-agent/
-│   ├── go.mod
-│   ├── go.sum
-│   └── main.go
-├── custom-provider/
-│   ├── go.mod
-│   ├── go.sum
-│   └── main.go
-└── ...
+├── .github/workflows/ci.yml   # root CI: the only workflow GitHub runs
+├── first-agent/               # hand-written example (agent + typed tool)
+│   ├── go.mod / go.sum
+│   ├── main.go / main_test.go
+│   └── README.md
+├── scaffolded-basic/          # `beluga init` output (see its README)
+│   ├── .beluga/               # project.yaml, eval.yaml, eval.smoke.json
+│   ├── .github/workflows/ci.yml  # shipped for copy-paste; NOT run by this repo
+│   ├── Dockerfile / Makefile / .env.example / .gitignore
+│   ├── go.mod / go.sum / main.go
+│   └── README.md
+├── dev-loop-demo/             # scaffolded shape + `beluga dev` walk-through
+└── eval-demo/                 # scaffolded shape + 4-row dataset + `beluga eval` walk-through
 ```
+
+Scaffolded examples (those with `.beluga/project.yaml`) must stay identical to `beluga init` output at the pinned framework version apart from timestamps and the hand-edits listed in `scaffolded-basic/README.md`. Their nested `.github/workflows/ci.yml` never runs here; root CI runs the equivalent `make check`, `make eval-ci` and `docker build` for each of them.
 
 Each example directory MUST:
 - Have its own `go.mod` importing `github.com/lookatitude/beluga-ai/v2`
@@ -55,15 +61,22 @@ cd first-agent && go run .
 # Test all examples compile
 for d in */; do [ -f "$d/go.mod" ] && (cd "$d" && go build . && echo "OK: $d" || echo "FAIL: $d"); done
 
-# Bump all examples to a new framework version
-for d in */; do [ -f "$d/go.mod" ] && (cd "$d" && go get github.com/lookatitude/beluga-ai/v2@v2.10.1 && go mod tidy); done
+# Bump all examples to a new framework version (<tag> = e.g. the release tag)
+# Normally done by the CI bump-on-release job, which also updates the README
+# `cmd/beluga@<tag>` lines, .beluga/project.yaml and the Dockerfile label.
+for d in */; do [ -f "$d/go.mod" ] && (cd "$d" && go get github.com/lookatitude/beluga-ai/v2@<tag> && go mod tidy); done
+
+# Scaffolded example gates (what root CI runs per scaffolded example)
+cd scaffolded-basic && \
+  go install "github.com/lookatitude/beluga-ai/v2/cmd/beluga@$(go list -m -f '{{.Version}}' github.com/lookatitude/beluga-ai/v2)" && \
+  make check && make eval-ci && docker build .
 ```
 
 ## Naming conventions
 
 - Directory name = example name = slug used in website tutorial links
-- Use kebab-case: `first-agent`, `custom-provider`, `multi-agent-team`
-- Match the framework guide name where a companion guide exists (e.g., `first-agent` matches `docs/guides/first-agent.md`)
+- Use kebab-case: `first-agent`, `dev-loop-demo`, `multi-agent-team`
+- Match the framework guide name where a companion guide exists (e.g., `first-agent` matches `docs/guides/first-agent.md`; the companions of `dev-loop-demo` and `eval-demo` are `docs/guides/dev-loop.md` and `docs/guides/evaluation.md`). Those guides don't link back to the examples yet.
 
 ## Code style
 
@@ -79,17 +92,19 @@ for d in */; do [ -f "$d/go.mod" ] && (cd "$d" && go get github.com/lookatitude/
 - `beluga-website` — tutorials and guides link to examples here. When renaming example directories, update the website links too.
 - `beluga.git` (workspace) — shared knowledge, roadmap, coordination.
 
-## Claude 4.x and example agents
+## Prompting baseline and example agents
 
-Agents under `.claude/agents/` include a **Prompting baseline (Claude 4.x)**. For this repo, that means **literal** scope per example (one feature per example), **explicit** file-top doc comments and env var documentation, and **no assumed** handoff to the website team—link and label what the example proves. When an example’s `main.go` uses the user’s real API keys, keep comments focused on **defensive, local use**; avoid celebratory offensive-security phrasing in sample text.
+Agents under `.claude/agents/` include a **Prompting baseline** (current Claude 5 family models). For this repo, that means **literal** scope per example (one feature per example), **explicit** file-top doc comments and env var documentation, and **no assumed** handoff to the website team—link and label what the example proves. When an example’s `main.go` uses the user’s real API keys, keep comments focused on **defensive, local use**; avoid celebratory offensive-security phrasing in sample text.
 
 ## Wiki
 
-`.guild/wiki/` holds examples-specific knowledge: per-example conventions, known framework version compatibility, testing patterns. See `.guild/wiki/index.md` for routing.
+`.guild/wiki/` holds examples-specific knowledge (currently a glossary, log and architecture map; per-example conventions and testing patterns live in this file and `.claude/rules/examples.md`). See `.guild/wiki/index.md` for routing.
 
 ## Security review
 
 Every new or modified example triggers `example-security-reviewer` (`.claude/agents/example-security-reviewer.md`) via the `/new-example` command. The reviewer runs gosec + govulncheck + manual checks for hardcoded secrets, unsafe patterns, and missing validation.
+
+Root CI runs `govulncheck ./...` and `gosec -quiet ./...` on every example, so the CVE and gosec rules below are enforced on every PR, not only via `/new-example`.
 
 Blocking findings (any gosec high-severity, any govulncheck CVE, hardcoded secrets, unbounded external reads, user input → exec/SQL/file without validation) must be fixed before merge.
 
