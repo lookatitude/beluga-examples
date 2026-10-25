@@ -2,7 +2,7 @@ module github.com/lookatitude/beluga-examples/eval-demo
 
 go 1.26.0
 
-require github.com/lookatitude/beluga-ai/v2 v2.13.6
+require github.com/lookatitude/beluga-ai/v2 v2.13.7
 
 require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
