@@ -103,7 +103,7 @@ Per `.claude/rules/examples.md`:
 
 Review the example for: idiomatic Go, consistent style with other examples, complete imports, proper error handling, no hardcoded secrets, README accuracy. Address any high-confidence findings before proceeding. Use the first reviewer that is available, and say in the PR body which one ran:
 
-1. **Codex adversarial review** — `/codex:adversarial-review` on the branch (needs the `codex@openai-codex` plugin and a logged-in `codex` CLI; see the workspace `CLAUDE.md` § Adversarial review). This is the default reviewer.
+1. **Codex adversarial review** — `/codex:adversarial-review` on the branch (needs the `codex@openai-codex` plugin and a logged-in `codex` CLI; see the workspace `AGENTS.md` § Adversarial review). This is the default reviewer.
 2. **`@agent-pr-review-toolkit:code-reviewer`** — only if the `pr-review-toolkit` plugin is installed (`claude plugin list`). It is not installed by default.
 3. **Neither available** — do a self-review against the checklist above and record "general review: self-review only (no Codex / pr-review-toolkit)" in the PR body. Do not describe it as an independent review.
 
