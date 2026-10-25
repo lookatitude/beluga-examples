@@ -19,7 +19,7 @@ Each example lives in its own directory with its own `go.mod`:
 ```
 examples/
 ├── CLAUDE.md
-├── .wiki/
+├── .guild/wiki/
 │   └── index.md
 ├── .claude/
 │   ├── agents/
@@ -85,7 +85,7 @@ Agents under `.claude/agents/` include a **Prompting baseline (Claude 4.x)**. Fo
 
 ## Wiki
 
-`.wiki/` holds examples-specific knowledge: per-example conventions, known framework version compatibility, testing patterns. See `.wiki/index.md` for routing.
+`.guild/wiki/` holds examples-specific knowledge: per-example conventions, known framework version compatibility, testing patterns. See `.guild/wiki/index.md` for routing.
 
 ## Security review
 
