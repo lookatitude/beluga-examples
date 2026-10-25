@@ -21,17 +21,23 @@ on:
 
 env:
   GO_VERSION: "1.26"
+  # Pinned scanner / linter versions so results are reproducible.
+  GOVULNCHECK_VERSION: "v1.9.0"
+  GOSEC_VERSION: "v2.25.0"
+  GOLANGCI_LINT_VERSION: "v2.15.0"
+  # Release tags accepted from dispatch payloads and manual inputs.
+  TAG_PATTERN: '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'
 
 jobs:
   test-examples:
-    name: Build and vet all examples
+    name: Build, vet, test, tidy and scan all examples
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -43,57 +49,60 @@ jobs:
         env:
           FRAMEWORK_TAG: ${{ inputs.framework_tag }}
         run: |
+          # [[ =~ ]] matches the whole value (grep would accept a multi-line one).
+          if ! [[ "${FRAMEWORK_TAG}" =~ ${TAG_PATTERN} ]]; then
+            echo "::error::framework_tag '${FRAMEWORK_TAG}' is not a release tag (vX.Y.Z[-pre])"
+            exit 1
+          fi
           for dir in */; do
             [ -f "${dir}go.mod" ] || continue
             (cd "${dir}" && go get "github.com/lookatitude/beluga-ai/v2@${FRAMEWORK_TAG}" && go mod tidy)
           done
 
-      - name: Build and vet all examples
+      - name: Install scanners
+        run: |
+          go install "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}"
+          go install "github.com/securego/gosec/v2/cmd/gosec@${GOSEC_VERSION}"
+
+      - name: Build, vet, test, tidy and scan
+        env:
+          # A manual bump above legitimately rewrites go.mod/go.sum; only
+          # enforce tidiness against the committed files otherwise.
+          CHECK_TIDY: ${{ github.event_name != 'workflow_dispatch' || inputs.framework_tag == '' }}
         run: |
           PASS=0
           FAIL=0
           FAILURES=""
 
-          for dir in */; do
-            if [ ! -f "${dir}go.mod" ]; then
-              continue
-            fi
+          fail() {
+            echo "::error::${EXAMPLE}: $1"
+            FAIL=$((FAIL + 1))
+            FAILURES="${FAILURES}\n  - ${EXAMPLE}: $1"
+          }
 
+          for dir in */; do
+            [ -f "${dir}go.mod" ] || continue
             EXAMPLE="${dir%/}"
             echo "::group::${EXAMPLE}"
-
             cd "${dir}"
 
-            if go build -o /dev/null . 2>&1; then
-              echo "build: OK"
+            if ! go build -o /dev/null ./...; then
+              fail "build failed"
+            elif ! go vet ./...; then
+              fail "vet failed"
+            elif ! go test -race -count=1 ./...; then
+              fail "tests failed"
+            elif [ "${CHECK_TIDY}" = "true" ] && ! go mod tidy -diff; then
+              fail "go.mod/go.sum not tidy (run 'go mod tidy')"
+            elif ! govulncheck ./...; then
+              fail "govulncheck reported vulnerabilities"
+            elif ! gosec -quiet ./...; then
+              fail "gosec reported issues"
             else
-              echo "::error::${EXAMPLE}: build failed"
-              FAIL=$((FAIL + 1))
-              FAILURES="${FAILURES}\n  - ${EXAMPLE}: build failed"
-              cd ..
-              echo "::endgroup::"
-              continue
+              PASS=$((PASS + 1))
+              echo "${EXAMPLE}: PASS"
             fi
 
-            if go vet . 2>&1; then
-              echo "vet: OK"
-            else
-              echo "::error::${EXAMPLE}: vet failed"
-              FAIL=$((FAIL + 1))
-              FAILURES="${FAILURES}\n  - ${EXAMPLE}: vet failed"
-              cd ..
-              echo "::endgroup::"
-              continue
-            fi
-
-            if go mod tidy && git diff --exit-code go.mod go.sum; then
-              echo "tidy: OK"
-            else
-              echo "::warning::${EXAMPLE}: go.mod/go.sum not tidy"
-            fi
-
-            PASS=$((PASS + 1))
-            echo "${EXAMPLE}: PASS"
             cd ..
             echo "::endgroup::"
           done
@@ -105,78 +114,205 @@ jobs:
           if [ "${FAIL}" -gt 0 ]; then
             echo ""
             echo "Failures:"
-            printf "${FAILURES}\n"
+            printf '%b\n' "${FAILURES}"
             exit 1
           fi
 
-  # On framework release dispatch, also bump go.mod versions and report
-  # any breakage. This runs AFTER test-examples to first verify current
-  # state, then test the new version.
+  # Find the scaffolded examples (directories with .beluga/project.yaml).
+  # Their nested .github/workflows/ci.yml never runs here — GitHub only reads
+  # the repo-root workflows — so scaffolded-checks re-runs the same gates.
+  discover-scaffolded:
+    name: Discover scaffolded examples
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      examples: ${{ steps.list.outputs.examples }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: list
+        run: |
+          EXAMPLES=$(for f in */.beluga/project.yaml; do [ -f "$f" ] && printf '%s\n' "${f%%/*}"; done \
+            | jq -R . | jq -cs .)
+          echo "examples=${EXAMPLES}" >> "$GITHUB_OUTPUT"
+          echo "Scaffolded examples: ${EXAMPLES}"
+
+  scaffolded-checks:
+    name: ${{ matrix.example }} (make check, eval-ci, docker build)
+    needs: [discover-scaffolded]
+    if: needs.discover-scaffolded.outputs.examples != '[]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        example: ${{ fromJSON(needs.discover-scaffolded.outputs.examples) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.example }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: ${{ matrix.example }}/go.mod
+          cache-dependency-path: ${{ matrix.example }}/go.sum
+
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+          install-only: true
+
+      # Same command the example's own ci.yml uses: the CLI at exactly the
+      # framework version pinned in go.mod.
+      - name: Install beluga CLI (go.mod version)
+        run: |
+          BELUGA_VERSION="$(go list -m -f '{{.Version}}' github.com/lookatitude/beluga-ai/v2)"
+          echo "Installing beluga CLI ${BELUGA_VERSION}"
+          go install "github.com/lookatitude/beluga-ai/v2/cmd/beluga@${BELUGA_VERSION}"
+
+      - name: make check (build + test + lint)
+        run: make check
+
+      - name: make eval-ci (mock-provider smoke eval)
+        run: make eval-ci
+
+      - name: docker build
+        run: docker build --tag "beluga-examples/${{ matrix.example }}:ci" .
+
+  # On framework release dispatch, bump every example's go.mod and the
+  # version stamps that track it, verify the result, and open a PR.
   bump-on-release:
     name: Bump framework version (release dispatch only)
     needs: [test-examples]
     if: github.event_name == 'repository_dispatch'
     runs-on: ubuntu-latest
+    # Back-to-back releases: only the newest bump matters.
+    concurrency:
+      group: bump-framework
+      cancel-in-progress: true
     permissions:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      # The payload tag is untrusted input: pass it through env (never
+      # interpolate it into a script) and validate it before any use.
+      - name: Validate release tag
+        id: tag
+        env:
+          RAW_TAG: ${{ github.event.client_payload.tag }}
+        run: |
+          # [[ =~ ]] matches the whole value (grep would accept a multi-line one).
+          if ! [[ "${RAW_TAG}" =~ ${TAG_PATTERN} ]]; then
+            echo "::error::client_payload.tag is not a release tag (vX.Y.Z[-pre]); refusing to bump"
+            exit 1
+          fi
+          echo "tag=${RAW_TAG}" >> "$GITHUB_OUTPUT"
+
       - name: Bump and test
         id: bump
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          TAG="${{ github.event.client_payload.tag }}"
           PASS=0
           FAIL=0
           REPORT=""
 
+          # The module proxy can lag a freshly pushed tag by a few minutes.
+          go_get_with_retry() {
+            for attempt in 1 2 3 4 5 6; do
+              if go get "github.com/lookatitude/beluga-ai/v2@${TAG}"; then
+                return 0
+              fi
+              echo "go get attempt ${attempt} failed; retrying in 30s"
+              sleep 30
+            done
+            return 1
+          }
+
           for dir in */; do
-            if [ ! -f "${dir}go.mod" ]; then
+            [ -f "${dir}go.mod" ] || continue
+            EXAMPLE="${dir%/}"
+            echo "::group::${EXAMPLE}"
+            cd "${dir}"
+
+            if ! go_get_with_retry; then
+              FAIL=$((FAIL + 1))
+              REPORT="${REPORT}\n- ${EXAMPLE}: BROKEN (go get ${TAG} failed)"
+              cd ..
+              echo "::endgroup::"
               continue
             fi
 
-            EXAMPLE="${dir%/}"
-            cd "${dir}"
-
-            # Bump to the released framework tag and tidy the graph.
-            go get "github.com/lookatitude/beluga-ai/v2@${TAG}" 2>&1 || true
-            go mod tidy 2>&1 || true
-
-            if go build -o /dev/null . 2>&1; then
-              PASS=$((PASS + 1))
-              REPORT="${REPORT}\n- ${EXAMPLE}: OK"
-            else
+            if ! go mod tidy; then
+              FAIL=$((FAIL + 1))
+              REPORT="${REPORT}\n- ${EXAMPLE}: BROKEN (go mod tidy failed)"
+            elif ! go build -o /dev/null ./...; then
               FAIL=$((FAIL + 1))
               REPORT="${REPORT}\n- ${EXAMPLE}: BROKEN (build failed)"
+            elif ! go vet ./...; then
+              FAIL=$((FAIL + 1))
+              REPORT="${REPORT}\n- ${EXAMPLE}: BROKEN (vet failed)"
+            else
+              PASS=$((PASS + 1))
+              REPORT="${REPORT}\n- ${EXAMPLE}: OK"
+            fi
+
+            # go.mod now pins TAG: keep the version stamps that track it in
+            # step (README install lines and pins, the scaffolded
+            # project.yaml, the Dockerfile image.version label). Historical
+            # mentions such as "introduced in v2.12.0" are not matched.
+            if [ -f README.md ]; then
+              sed -E -i \
+                -e "s#(beluga-ai/v2/cmd/beluga@)v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?#\1${TAG}#g" \
+                -e "s#(Pins \`github\.com/lookatitude/beluga-ai/v2 )v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?#\1${TAG}#g" \
+                README.md
+            fi
+            if [ -f .beluga/project.yaml ]; then
+              sed -E -i -e "s#^(beluga-version: )v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?\$#\1${TAG}#" .beluga/project.yaml
+            fi
+            if [ -f Dockerfile ]; then
+              sed -E -i -e "s#(org\.opencontainers\.image\.version=\")v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?\"#\1${TAG}\"#" Dockerfile
             fi
 
             cd ..
+            echo "::endgroup::"
           done
 
           TOTAL=$((PASS + FAIL))
-          echo "report<<REPORT_EOF" >> "$GITHUB_OUTPUT"
-          printf "Results: ${PASS}/${TOTAL} examples passing against ${TAG}\n${REPORT}\n" >> "$GITHUB_OUTPUT"
-          echo "REPORT_EOF" >> "$GITHUB_OUTPUT"
-          echo "has_changes=$(git diff --quiet && echo false || echo true)" >> "$GITHUB_OUTPUT"
-          echo "failures=${FAIL}" >> "$GITHUB_OUTPUT"
+          {
+            echo "report<<REPORT_EOF"
+            printf 'Results: %s/%s examples passing against %s\n%b\n' "${PASS}" "${TOTAL}" "${TAG}" "${REPORT}"
+            echo "REPORT_EOF"
+            echo "has_changes=$(git diff --quiet && echo false || echo true)"
+            echo "failures=${FAIL}"
+          } >> "$GITHUB_OUTPUT"
 
+      # EXAMPLES_BUMP_TOKEN (a PAT or GitHub App token with contents +
+      # pull-requests write) lets the bump PR trigger pull_request CI without
+      # a manual approval; PRs opened with GITHUB_TOKEN don't trigger
+      # workflows. Falls back to GITHUB_TOKEN when the secret isn't set.
       - name: Create bump PR
+        id: pr
         if: steps.bump.outputs.has_changes == 'true'
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: chore/bump-framework-${{ github.event.client_payload.tag }}
+          token: ${{ secrets.EXAMPLES_BUMP_TOKEN || secrets.GITHUB_TOKEN }}
+          branch: chore/bump-framework-${{ steps.tag.outputs.tag }}
           base: main
           delete-branch: true
-          title: "chore(deps): bump beluga-ai to ${{ github.event.client_payload.tag }}"
-          commit-message: "chore(deps): bump beluga-ai to ${{ github.event.client_payload.tag }}"
+          title: "chore(deps): bump beluga-ai to ${{ steps.tag.outputs.tag }}"
+          commit-message: "chore(deps): bump beluga-ai to ${{ steps.tag.outputs.tag }}"
           body: |
-            Automated bump triggered by framework release ${{ github.event.client_payload.tag }}.
+            Automated bump triggered by framework release ${{ steps.tag.outputs.tag }}.
 
             ${{ steps.bump.outputs.report }}
 
@@ -184,3 +320,31 @@ jobs:
           add-paths: |
             */go.mod
             */go.sum
+            */README.md
+            */.beluga/project.yaml
+            */Dockerfile
+
+      - name: Close superseded bump PRs
+        if: steps.pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_BRANCH: chore/bump-framework-${{ steps.tag.outputs.tag }}
+          CURRENT_PR: ${{ steps.pr.outputs.pull-request-number }}
+        run: |
+          gh pr list --repo "${GITHUB_REPOSITORY}" --state open --json number,headRefName \
+            --jq '.[] | select(.headRefName | startswith("chore/bump-framework-")) | "\(.number) \(.headRefName)"' |
+          while read -r number branch; do
+            [ "${branch}" = "${CURRENT_BRANCH}" ] && continue
+            gh pr close "${number}" --repo "${GITHUB_REPOSITORY}" --delete-branch \
+              --comment "Superseded by #${CURRENT_PR}."
+          done
+
+      - name: Fail when any example is broken
+        if: steps.bump.outputs.failures != '0'
+        env:
+          FAILURES: ${{ steps.bump.outputs.failures }}
+          REPORT: ${{ steps.bump.outputs.report }}
+        run: |
+          printf '%s\n' "${REPORT}"
+          echo "::error::${FAILURES} example(s) broken against the new framework tag"
+          exit 1
