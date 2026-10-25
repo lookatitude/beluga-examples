@@ -8,7 +8,7 @@ when you bootstrap a new Beluga AI project.
 ## Regenerate locally
 
 ```bash
-go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@v2.13.6
+go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@v2.13.11
 beluga init scaffolded-basic \
   --module github.com/lookatitude/beluga-examples/scaffolded-basic
 cd scaffolded-basic && go mod tidy
@@ -42,7 +42,7 @@ the repo's framework-bump CI job.
 | Path                         | Purpose                                                           |
 |------------------------------|-------------------------------------------------------------------|
 | `main.go`                    | Agent + echo tool + OTel bootstrap + `BELUGA_ENV=eval` branch     |
-| `go.mod`                     | Pins `github.com/lookatitude/beluga-ai/v2 v2.13.6`                |
+| `go.mod`                     | Pins `github.com/lookatitude/beluga-ai/v2 v2.13.11`                |
 | `.beluga/project.yaml`       | Project metadata (schema-version, name, template, beluga-version) |
 | `.beluga/eval.yaml`          | `beluga eval` config — metrics, row timeout, parallelism          |
 | `.beluga/eval.smoke.json`    | 3-row mock-provider smoke dataset for `make eval-ci`              |
@@ -83,7 +83,7 @@ the fixture queue in the dataset drives the assistant trajectory, so there are n
 paid calls and no flakiness:
 
 ```bash
-go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@v2.13.6
+go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@v2.13.11
 make eval-ci
 ```
 
