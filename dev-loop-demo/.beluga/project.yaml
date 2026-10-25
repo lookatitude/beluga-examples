@@ -1,5 +1,5 @@
 schema-version: 1
 name: dev-loop-demo
 template: basic
-beluga-version: v2.13.6
+beluga-version: v2.13.10
 scaffolded-at: 2026-10-25T17:23:09Z

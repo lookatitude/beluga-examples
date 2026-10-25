@@ -15,7 +15,7 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/scaffolded-basic .
 FROM gcr.io/distroless/static-debian12:nonroot
 
 LABEL org.opencontainers.image.source="https://example.com/scaffolded-basic"
-LABEL org.opencontainers.image.version="v2.13.6"
+LABEL org.opencontainers.image.version="v2.13.10"
 LABEL org.opencontainers.image.title="scaffolded-basic"
 
 USER nonroot:nonroot

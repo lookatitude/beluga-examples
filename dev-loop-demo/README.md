@@ -120,7 +120,7 @@ The project also ships the default `.beluga/eval.smoke.json` from the scaffolder
 exits non-zero on any row failure:
 
 ```bash
-go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@v2.13.6
+go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@v2.13.10
 make eval-ci
 ```
 
@@ -139,7 +139,7 @@ the watcher ignores those.
 ## Regenerate locally
 
 ```bash
-go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@v2.13.6
+go install github.com/lookatitude/beluga-ai/v2/cmd/beluga@v2.13.10
 beluga init dev-loop-demo \
   --module github.com/lookatitude/beluga-examples/dev-loop-demo
 cd dev-loop-demo && go mod tidy
