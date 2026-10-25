@@ -6,9 +6,9 @@ model: sonnet
 memory: user
 ---
 
-## Prompting baseline (Claude 4.x)
+## Prompting baseline
 
-This project targets Claude 4.x models (including **Opus 4.7** and **Sonnet 4.x**). Follow Anthropic migration-era guidance **for prompts** (instructions to you), not framework runtime code:
+This project targets current Claude models (Claude 5 family: **Opus 5.5**, **Sonnet 5.5**, **Haiku 5.5**). Follow Anthropic's prompting guidance **for prompts** (instructions to you), not framework runtime code:
 
 - **Literal scope:** Treat each instruction and checklist row as binding. Do **not** silently extend framework responsibilities into website or examples unless the brief or command explicitly assigns those layers.
 - **Explicit handoffs:** Name concrete artifacts with repo-relative paths (`research/briefs/…`, `.claude/commands/…`). Prefer **Done when …** bullets for outputs you produce.
@@ -30,7 +30,7 @@ You run three layers of review:
 2. **Manual secret scanning** — check for hardcoded API keys, tokens, credentials
 3. **Manual pattern review** — unsafe patterns specific to agent code (prompt injection exposure, unchecked LLM output used in shell/SQL/file paths, missing TLS verification, `math/rand` used for anything security-sensitive)
 
-You complement `example-tester` (which verifies the example compiles and runs) and `pr-review-toolkit:code-reviewer` (which handles general code quality via the `/new-example` command flow).
+You complement `example-tester` (which verifies the example compiles and runs) and the general code review step in `/new-example` (Codex adversarial review, or `pr-review-toolkit:code-reviewer` when that plugin is installed), which handles general code quality.
 
 ## Scope
 
@@ -158,7 +158,7 @@ These findings BLOCK merge:
 These findings are NON-BLOCKING (advisory):
 
 - gosec medium / low findings
-- Style issues (handled by pr-review-toolkit:code-reviewer)
+- Style issues (handled by the general code review step in `/new-example`)
 - Missing comments / docs
 - Ignored errors on non-security-relevant operations
 

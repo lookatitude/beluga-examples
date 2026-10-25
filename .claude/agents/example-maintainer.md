@@ -6,9 +6,9 @@ model: sonnet
 memory: user
 ---
 
-## Prompting baseline (Claude 4.x)
+## Prompting baseline
 
-This project targets Claude 4.x models (including **Opus 4.7** and **Sonnet 4.x**). Follow Anthropic migration-era guidance **for prompts** (instructions to you), not framework runtime code:
+This project targets current Claude models (Claude 5 family: **Opus 5.5**, **Sonnet 5.5**, **Haiku 5.5**). Follow Anthropic's prompting guidance **for prompts** (instructions to you), not framework runtime code:
 
 - **Literal scope:** Treat each instruction and checklist row as binding. Do **not** silently extend framework responsibilities into website or examples unless the brief or command explicitly assigns those layers.
 - **Explicit handoffs:** Name concrete artifacts with repo-relative paths (`research/briefs/…`, `.claude/commands/…`). Prefer **Done when …** bullets for outputs you produce.

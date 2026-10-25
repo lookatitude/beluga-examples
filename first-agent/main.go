@@ -4,7 +4,7 @@
 // that answers arithmetic questions using Beluga's agent + tool packages.
 //
 // Prerequisites:
-//   - Go 1.23+
+//   - Go 1.26+ (see go.mod)
 //   - OPENAI_API_KEY=your OpenAI API key (or swap provider — see comments)
 //
 // Run:
@@ -14,6 +14,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -67,13 +68,35 @@ func newCalculatorTool() tool.Tool {
 	)
 }
 
+// errMissingAPIKey is returned by apiKeyFromEnv when OPENAI_API_KEY is
+// unset, so the example fails fast with a hint instead of reaching the
+// provider and getting a remote 401.
+var errMissingAPIKey = errors.New("OPENAI_API_KEY is not set")
+
+// apiKeyFromEnv reads OPENAI_API_KEY through getenv (os.Getenv in main;
+// injectable for tests) and rejects an empty or whitespace-only value.
+func apiKeyFromEnv(getenv func(string) string) (string, error) {
+	key := strings.TrimSpace(getenv("OPENAI_API_KEY"))
+	if key == "" {
+		return "", errMissingAPIKey
+	}
+	return key, nil
+}
+
 func main() {
+	apiKey, err := apiKeyFromEnv(os.Getenv)
+	if err != nil {
+		log.Fatalf("%v.\n"+
+			"  Get a key at https://platform.openai.com/api-keys\n"+
+			"  Or swap providers: see the comments next to the provider import.", err)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
 	model, err := llm.New("openai", config.ProviderConfig{
 		Provider: "openai",
-		APIKey:   os.Getenv("OPENAI_API_KEY"),
+		APIKey:   apiKey,
 		Model:    "gpt-4o-mini",
 	})
 	if err != nil {

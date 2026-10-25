@@ -45,12 +45,11 @@ graph and onboarding tour were **not** built at init; run `/guild:learn` to buil
 | `.claude` | 8 |
 | `first-agent` | 4 |
 | `.github` | 1 |
-| `.wiki` | 1 |
 | `CLAUDE.md` | 1 |
 
 ## Flows
 
-- **[high]** CI builds and vets every example. A framework release dispatches `framework-release` here; the bump job updates each `go.mod`. Source: `CLAUDE.md`, workspace release-flow page.
+- **[high]** CI builds, vets, tests, tidy-checks and scans (govulncheck, gosec) every example, and runs `make check`, `make eval-ci` and `docker build` for each scaffolded example. A framework release dispatches `framework-release` here; the bump job updates each `go.mod` plus the README / project.yaml / Dockerfile version stamps and opens a PR. Source: `.github/workflows/ci.yml`, workspace release-flow page. (Updated 2026-10-25; the `.wiki` row was removed because `.wiki/` no longer exists.)
 
 ## Knowledge that stays where it is
 
