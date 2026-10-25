@@ -37,7 +37,7 @@ You complement `example-tester` (which verifies the example compiles and runs) a
 **Read:**
 - The diff for the PR (via `git diff main...HEAD`)
 - New or modified files under `<example-name>/`
-- `.wiki/index.md` for context
+- `.guild/wiki/index.md` for context
 - Framework security rules at `../framework/.claude/rules/security.md` (as the reference standard)
 
 **Write:**

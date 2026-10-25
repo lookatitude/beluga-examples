@@ -27,7 +27,7 @@ Create new runnable code examples that demonstrate framework features. Each exam
 ## Before starting
 
 1. Read `CLAUDE.md` for structure, naming conventions, and code style.
-2. Read `.wiki/index.md` for any example-specific knowledge.
+2. Read `.guild/wiki/index.md` for any example-specific knowledge.
 3. Read the **framework source** for the feature you're demonstrating:
    - `../framework/docs/guides/` — the framework's guide for this feature
    - `../framework/<package>/` — the actual package code
