@@ -10,7 +10,7 @@ Standalone runnable code examples for the Beluga AI framework (`github.com/looka
 
 This repo owns the **demonstration layer** of the Beluga project: runnable, copy-paste-ready programs that prove the framework works. It does **not** own framework code (that's `beluga-ai`), docs content (that's `beluga-website`), or project strategy (that's `beluga.git` workspace).
 
-When working on cross-repo concerns (a framework API change that breaks examples, a new tutorial that needs a companion example), consult the **workspace wiki** at `../.wiki/index.md` and the workspace `CLAUDE.md` at `../CLAUDE.md` — they're only visible when this repo is checked out inside the multi-repo Beluga workspace.
+When working on cross-repo concerns (a framework API change that breaks examples, a new tutorial that needs a companion example), consult the **workspace wiki** at `../.guild/wiki/context/workspace-router.md` and the workspace `CLAUDE.md` at `../CLAUDE.md` — they're only visible when this repo is checked out inside the multi-repo Beluga workspace.
 
 ## Structure
 
