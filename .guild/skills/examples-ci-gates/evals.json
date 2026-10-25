@@ -1,0 +1,16 @@
+{
+  "skill": "examples-ci-gates",
+  "should_trigger": [
+    "Run what root CI runs on every example and tell me which ones fail.",
+    "Bump all examples to v2.14.0 the same way the bump-on-release job does.",
+    "Which gosec and govulncheck versions does CI pin?",
+    "Why did the scaffolded-checks job fail on eval-demo?",
+    "Is scaffolded-basic green before I commit?"
+  ],
+  "should_not_trigger": [
+    "What should the file-top comment in main.go say?",
+    "Name the directory for the new custom-planner example.",
+    "Does this hardcoded token block merge?",
+    "Write a website tutorial for the dev loop."
+  ]
+}

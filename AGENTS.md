@@ -20,8 +20,11 @@ Each example lives in its own directory with its own `go.mod`:
 examples/
 ├── AGENTS.md
 ├── CLAUDE.md                # imports AGENTS.md
-├── .guild/wiki/
-│   └── index.md
+├── .guild/
+│   ├── wiki/index.md
+│   ├── agents/                # Guild specialist copies of .claude/agents
+│   ├── skills/                # examples-conventions, examples-ci-gates
+│   └── settings.json, config/project.json
 ├── .claude/
 │   ├── agents/
 │   ├── commands/
@@ -59,8 +62,8 @@ cd first-agent && go build .
 # Run a single example (may need API keys)
 cd first-agent && go run .
 
-# Test all examples compile
-for d in */; do [ -f "$d/go.mod" ] && (cd "$d" && go build . && echo "OK: $d" || echo "FAIL: $d"); done
+# Quick compile check of all examples (the full CI-parity chain is /test-all; see .guild/skills/examples-ci-gates)
+for d in */; do [ -f "$d/go.mod" ] && (cd "$d" && go build -o /dev/null ./... && echo "OK: $d" || echo "FAIL: $d"); done
 
 # Bump all examples to a new framework version (<tag> = e.g. the release tag)
 # Normally done by the CI bump-on-release job, which also updates the README
@@ -93,17 +96,41 @@ cd scaffolded-basic && \
 - `beluga-website` — tutorials and guides link to examples here. When renaming example directories, update the website links too.
 - `beluga.git` (workspace) — shared knowledge, roadmap, coordination.
 
+## Toolchain
+
+`go.mod` floor is Go 1.26. Root CI builds with Go 1.27.3 (`GO_VERSION` in `.github/workflows/ci.yml`) and pins govulncheck v1.9.0, gosec v2.30.0 and golangci-lint v2.15.0. Scaffolded examples ship `golang:1.27-alpine` Dockerfiles and nested workflows that use `go-version-file: go.mod` with `check-latest: true`. Run the same chain locally before claiming anything is green (`/test-all`, `.claude/rules/examples.md` § Before commit).
+
+## Agents and Guild specialists
+
+Each Claude Code agent in `.claude/agents/` has a Guild specialist copy in `.guild/agents/` for `/guild:*` runs. Guild never host-registers `.guild/agents/`, so both copies are kept. When a role's scope, tools or tier changes, update both.
+
+| `.claude/agents/` | Guild specialist | Source | `model` | Tools |
+|---|---|---|---|---|
+| `example-author` | `example-author` | project-specific (`guild.agent_template.v2`; nearest generic role: machinery `developer`, no shipped template fits standalone demo programs) | `sonnet` | Read, Write, Edit, Bash, Glob, Grep, WebFetch |
+| `example-maintainer` | `example-maintainer` | project-specific (`guild.agent_template.v2`; version-pin hygiene plus minimal fixes, no shipped template) | `sonnet` | Read, Write, Edit, Bash, Glob, Grep |
+| `example-security-reviewer` | `security` | shipped `security` template plus a "Beluga examples localization" section | `sonnet` (template default `opus`, overridden) | Read, Grep, Glob, Bash, Write |
+| `example-tester` | `qa` | shipped `qa` template plus a "Beluga examples localization" section (read-only validation lane) | `haiku` (template default `sonnet`, overridden) | Read, Bash, Glob, Grep |
+
+Project skills the specialists pull, in `.guild/skills/<name>/{SKILL.md,evals.json}`. Plain Claude Code agents read the same files, so there is one copy:
+
+- `examples-conventions`: per-example layout, naming, file-top comment, code style, secrets, version pins and scaffolded-example rules.
+- `examples-ci-gates`: the root-CI gate chain, the scaffolded matrix, the release-bump stamps and the pinned toolchain.
+
+Tiering follows the workspace policy (`../AGENTS.md` § Default model tiering). Aliases `opus`, `sonnet` and `haiku` resolve to the Claude 5 family. `haiku` is reserved for the read-only validation helper. Guild's per-lane auto-tiering (`.guild/settings.json` `models.tiers`) still applies inside `/guild` runs.
+
+**Coordinator model.** The main session is the coordinator (team lead). Agents and teammates commit on their branch and hand back a report. They never push, open, review or merge PRs, and never write to Linear, Sonar or Notion. The coordinator does all of that. **Adversarial review:** Codex is the general reviewer (`/codex:adversarial-review` on the branch before a PR; Guild `review: cross`, `adversarial_review_provider: codex-plugin`). See `../AGENTS.md` § Adversarial review (Codex). If Codex is unavailable, record a self-review and never present it as independent.
+
 ## Prompting baseline and example agents
 
 Agents under `.claude/agents/` include a **Prompting baseline** (current Claude 5 family models). For this repo, that means **literal** scope per example (one feature per example), **explicit** file-top doc comments and env var documentation, and **no assumed** handoff to the website team—link and label what the example proves. When an example’s `main.go` uses the user’s real API keys, keep comments focused on **defensive, local use**; avoid celebratory offensive-security phrasing in sample text.
 
 ## Wiki
 
-`.guild/wiki/` holds examples-specific knowledge (currently a glossary, log and architecture map; per-example conventions and testing patterns live in this file and `.claude/rules/examples.md`). See `.guild/wiki/index.md` for routing.
+`.guild/wiki/` holds examples-specific knowledge (currently a glossary, log and architecture map; per-example conventions and testing patterns live in this file, `.claude/rules/examples.md` and the Guild skills under `.guild/skills/`). See `.guild/wiki/index.md` for routing.
 
 ## Security review
 
-Every new or modified example triggers `example-security-reviewer` (`.claude/agents/example-security-reviewer.md`) via the `/new-example` command. The reviewer runs gosec + govulncheck + manual checks for hardcoded secrets, unsafe patterns, and missing validation.
+Every new or modified example triggers `example-security-reviewer` (`.claude/agents/example-security-reviewer.md`) via the `/new-example` command. The reviewer runs gosec (v2.30.0) + govulncheck (v1.9.0) + manual checks for hardcoded secrets, unsafe patterns, and missing validation, writes a report, and returns a pass / advisory / blocking verdict. The coordinator posts it to the PR.
 
 Root CI runs `govulncheck ./...` and `gosec -quiet ./...` on every example, so the CVE and gosec rules below are enforced on every PR, not only via `/new-example`.
 

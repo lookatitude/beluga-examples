@@ -1,0 +1,16 @@
+{
+  "skill": "examples-conventions",
+  "should_trigger": [
+    "Write a new example that shows the streaming agent API.",
+    "Does the multi-agent-team example follow the repo conventions?",
+    "What should I name the directory for the custom planner example?",
+    "Can first-agent and dev-loop-demo share a small helper package?",
+    "What has to go in the comment block at the top of main.go?"
+  ],
+  "should_not_trigger": [
+    "Which gosec version does root CI pin?",
+    "Run the same checks CI runs on every example before I commit.",
+    "Is this govulncheck finding in eval-demo exploitable?",
+    "Change the agent.Run signature in the framework."
+  ]
+}
