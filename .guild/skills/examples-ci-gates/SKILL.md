@@ -61,6 +61,8 @@ make eval-ci      # mock-provider smoke eval
 docker build .
 ```
 
+`make check` builds a binary inside the example directory. A read-only lane (qa) runs this block in a temporary copy (`cp -r <example> "$TMPDIR"/ && cd "$TMPDIR"/<example>`) so no build output lands in the repo.
+
 **3. Release bump (`bump-on-release` job, on `repository_dispatch: framework-release` only).** The job validates the payload tag, then for every example runs `go get github.com/lookatitude/beluga-ai/v2@<tag>` (retrying while the proxy lags), `go mod tidy`, build and vet. It rewrites the version stamps that track the pin:
 - the `README.md` lines `beluga-ai/v2/cmd/beluga@<tag>` and ``Pins `github.com/lookatitude/beluga-ai/v2 <tag>``;
 - `beluga-version:` in `.beluga/project.yaml`;
@@ -81,7 +83,7 @@ It then opens `chore/bump-framework-<tag>` through `peter-evans/create-pull-requ
 # Safety constraints
 
 - Validate a framework tag against the pattern above before using it in a shell command.
-- Do not edit `.github/workflows/` or nested scaffolded workflows from an agent lane.
+- Do not hand-edit `.github/workflows/` or nested scaffolded workflows from an agent lane. The one exception: `/new-example` may generate a scaffolded example's nested workflows unchanged via `beluga init`.
 - Do not push, open PRs or post reviews. The coordinator does that.
 
 # Eval cases

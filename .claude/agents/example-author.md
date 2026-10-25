@@ -1,7 +1,7 @@
 ---
 name: example-author
 description: Creates new runnable examples for Beluga AI framework features. Each example is a self-contained Go program with its own go.mod that compiles and runs independently.
-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
+tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, SendMessage
 model: sonnet
 memory: user
 ---

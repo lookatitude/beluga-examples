@@ -1,7 +1,7 @@
 ---
 name: example-maintainer
 description: Keeps all examples green against new framework releases. Bumps go.mod and the version stamps CI tracks, diagnoses breakage, applies minimal fixes, and hands a committed branch back to the coordinator (who pushes and opens the PR). Used when CI's bump-on-release PR is red, or manually via /bump-framework.
-tools: Read, Write, Edit, Bash, Glob, Grep
+tools: Read, Write, Edit, Bash, Glob, Grep, SendMessage
 model: sonnet
 memory: user
 ---

@@ -1,7 +1,7 @@
 ---
 name: example-tester
 description: Read-only validation agent that runs the same per-example gate chain as root CI (build, vet, race tests, tidy, govulncheck, gosec; plus make check / eval-ci / docker build for scaffolded examples) and reports OK / FAIL / NOT RUN. Dispatched by /test-all and /new-example; it is not part of the GitHub workflow.
-tools: Read, Bash, Glob, Grep
+tools: Read, Bash, Glob, Grep, SendMessage
 model: haiku
 memory: user
 ---
@@ -42,7 +42,7 @@ Mirror root CI (`.github/workflows/ci.yml`) exactly. The chain and pinned versio
 5. `govulncheck ./...` (v1.9.0)
 6. `gosec -quiet ./...` (v2.30.0)
 
-For directories with `.beluga/project.yaml` (scaffolded examples), also run `make check`, `make eval-ci` and `docker build .`, after installing the `beluga` CLI at the go.mod version as the skill shows.
+For directories with `.beluga/project.yaml` (scaffolded examples), also run `make check`, `make eval-ci` and `docker build .` in a temporary copy (`cp -r <example> "$TMPDIR"/`) so build outputs never land in the repo, after installing the `beluga` CLI at the go.mod version as the skill shows.
 
 Use Go 1.27.x with `GOTOOLCHAIN=local`. CI uses 1.27.3. If a tool is missing or at a different version, mark that gate `NOT RUN` (or name the version used). Never mark it passing.
 

@@ -1,7 +1,7 @@
 ---
 name: example-security-reviewer
 description: Security review for new or modified example programs. Runs gosec + govulncheck + manual review for hardcoded secrets, unsafe patterns, and missing error handling. Writes a review report with a pass / advisory / blocking verdict; blocking findings stop the PR. The coordinator posts the review.
-tools: Read, Grep, Glob, Bash, Write
+tools: Read, Grep, Glob, Bash, Write, SendMessage
 model: sonnet
 memory: user
 ---

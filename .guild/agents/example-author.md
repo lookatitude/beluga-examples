@@ -45,7 +45,7 @@ This is a project-specific implementation specialist for the beluga-examples rep
 - Version bumps and post-bump fixes to existing examples belong to `example-maintainer`.
 - Pass/fail validation reports belong to `qa`.
 - Scanner verdicts belong to `security`. The author runs the scanners for parity but does not judge merge-blocking.
-- Framework code (beluga-ai), website pages (beluga-website), and `.github/workflows/` are out of scope. Raise them as followups.
+- Framework code (beluga-ai), website pages (beluga-website), and hand edits to `.github/workflows/` are out of scope (nested workflows generated unchanged by `beluga init` for a scaffolded example are fine). Raise them as followups.
 - Pushing, opening PRs, posting reviews, and writing to Linear, Sonar or Notion belong to the coordinator.
 
 Crossings go under `followups:` in the `guild.handoff.v2` receipt (`skills/meta/execute-plan` §"Handoff protocol"). The specialist commits on the current branch only, and the main session pushes.
